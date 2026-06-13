@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Apertura de turno — Parqueos</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.9.0/dist/tabler-icons.min.css">
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  :root{
+    --green:#1D9E75;--green-dark:#0F6E56;--green-light:#EAF3DE;--green-text:#3B6D11;
+    --red-bg:#FCEBEB;--red-text:#A32D2D;--red-border:#F09595;
+    --amber-bg:#FAEEDA;--amber-text:#854F0B;
+    --blue-bg:#E6F1FB;--blue-text:#0C447C;
+    --gray-bg:#F1EFE8;--gray-text:#5F5E5A;
+    --border:#e0ddd6;--border-light:#eeece8;
+    --bg:#ffffff;--bg2:#f8f7f4;--bg3:#f1efe8;
+    --text:#1a1a18;--text2:#5f5e5a;--text3:#888780;
+    --radius:8px;--radius-lg:12px;
+  }
+  body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:15px;color:var(--text);background:var(--bg2);min-height:100vh}
+  .app{max-width:480px;margin:0 auto;padding:16px;min-height:100vh}
+  .screen{display:none}
+  .screen.active{display:block}
+  .card{background:var(--bg);border:0.5px solid var(--border);border-radius:var(--radius-lg);padding:16px 20px;margin-bottom:12px}
+  .page-title{font-size:20px;font-weight:600;color:var(--text);margin-bottom:4px;display:flex;align-items:center;gap:8px}
+  .page-sub{font-size:13px;color:var(--text2);margin-bottom:20px}
+  label{display:block;font-size:12px;color:var(--text2);margin-bottom:5px;margin-top:14px;font-weight:500;letter-spacing:.3px}
+  label:first-child{margin-top:0}
+  input[type=text],input[type=date],select,textarea{
+    width:100%;padding:10px 12px;border:0.5px solid var(--border);border-radius:var(--radius);
+    font-size:14px;font-family:inherit;color:var(--text);background:var(--bg);
+    -webkit-appearance:none;appearance:none;outline:none;transition:border-color .15s
+  }
+  input:focus,select:focus,textarea:focus{border-color:var(--green)}
+  textarea{resize:vertical;min-height:56px}
+  select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;padding-right:36px}
+  .btn{display:block;width:100%;padding:12px;border-radius:var(--radius);border:0.5px solid var(--border);background:var(--bg);color:var(--text);font-size:14px;font-weight:500;cursor:pointer;font-family:inherit;text-align:center;transition:background .15s,transform .1s}
+  .btn:active{transform:scale(.98)}
+  .btn-primary{background:var(--green);color:#fff;border-color:var(--green)}
+  .btn-primary:hover{background:var(--green-dark)}
+  .btn-danger{background:var(--red-bg);color:var(--red-text);border-color:var(--red-border)}
+  .btn-row{display:flex;gap:8px;margin-top:16px}
+  .btn-row .btn{flex:1}
+  .alert{padding:10px 14px;border-radius:var(--radius);font-size:13px;margin-bottom:12px;display:none}
+  .alert-err{background:var(--red-bg);color:var(--red-text);border:0.5px solid var(--red-border)}
+  .step-dots{display:flex;gap:7px;justify-content:center;margin-bottom:20px}
+  .dot{width:9px;height:9px;border-radius:50%;background:var(--bg3);border:0.5px solid var(--border)}
+  .dot.active{background:var(--green);border-color:var(--green)}
+  .dot.done{background:#9FE1CB;border-color:var(--green)}
+  .prog-row{display:flex;justify-content:space-between;font-size:12px;color:var(--text2);margin-bottom:5px}
+  .prog-bg{height:5px;background:var(--bg3);border-radius:99px;overflow:hidden;margin-bottom:16px}
+  .prog-fill{height:100%;background:var(--green);border-radius:99px;transition:width .3s}
+  .sec-header{display:flex;align-items:center;gap:8px;margin-bottom:12px}
+  .sec-icon{font-size:20px;color:var(--green)}
+  .sec-title{font-size:16px;font-weight:600;color:var(--text);flex:1}
+  .sec-prog{font-size:12px;color:var(--text2)}
+  .item-row{display:flex;align-items:flex-start;gap:10px;padding:10px 0;border-bottom:0.5px solid var(--border-light);cursor:pointer;-webkit-tap-highlight-color:transparent}
+  .item-row:last-of-type{border-bottom:none;padding-bottom:0}
+  .cb{width:22px;height:22px;border-radius:5px;border:1.5px solid var(--border);flex-shrink:0;margin-top:1px;display:flex;align-items:center;justify-content:center;transition:background .15s,border-color .15s}
+  .cb.on{background:var(--green);border-color:var(--green)}
+  .cb.on::after{content:'';display:block;width:5px;height:10px;border:2px solid white;border-left:none;border-top:none;transform:rotate(45deg) translate(-1px,-1px)}
+  .item-content{flex:1;min-width:0}
+  .item-text{font-size:13px;color:var(--text);line-height:1.45}
+  .tag{font-size:11px;padding:2px 8px;border-radius:99px;flex-shrink:0;margin-top:2px;font-weight:500}
+  .tag-c{background:var(--red-bg);color:var(--red-text)}
+  .tag-i{background:var(--amber-bg);color:var(--amber-text)}
+  .tag-r{background:var(--green-light);color:var(--green-text)}
+  .obs-toggle{font-size:12px;color:var(--green);cursor:pointer;display:inline-flex;align-items:center;gap:4px;margin-top:5px;-webkit-tap-highlight-color:transparent}
+  .obs-box{display:none;margin-top:6px}
+  .obs-box textarea{font-size:13px;min-height:44px}
+  .photo-section{margin-top:14px;padding-top:14px;border-top:0.5px solid var(--border-light)}
+  .photo-label{font-size:12px;color:var(--text2);margin-bottom:10px;display:flex;align-items:center;gap:6px;font-weight:500}
+  .photo-count-badge{background:var(--blue-bg);color:var(--blue-text);font-size:11px;padding:2px 8px;border-radius:99px;font-weight:500}
+  .photo-grid{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px}
+  .thumb-wrap{position:relative;width:76px;height:76px}
+  .thumb-wrap img{width:76px;height:76px;object-fit:cover;border-radius:var(--radius);border:0.5px solid var(--border);display:block}
+  .thumb-del{position:absolute;top:-7px;right:-7px;width:20px;height:20px;border-radius:50%;background:#E24B4A;color:white;border:2px solid var(--bg);cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;line-height:1;font-weight:700}
+  .btn-photo{display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border-radius:var(--radius);border:0.5px solid var(--border);background:var(--bg);color:var(--text);font-size:13px;cursor:pointer;font-family:inherit;font-weight:500;-webkit-tap-highlight-color:transparent}
+  .btn-photo:active{transform:scale(.97)}
+  .sig-wrap{border:0.5px solid var(--border);border-radius:var(--radius);overflow:hidden;touch-action:none;background:var(--bg)}
+  canvas{display:block;width:100%;cursor:crosshair}
+  .sig-actions{display:flex;gap:8px;margin-top:8px;align-items:center}
+  .sig-hint{font-size:12px;color:var(--text3);flex:1}
+  .summary-row{display:flex;justify-content:space-between;align-items:flex-start;font-size:13px;padding:7px 0;border-bottom:0.5px solid var(--border-light);gap:12px}
+  .summary-row:last-child{border-bottom:none}
+  .summary-lbl{color:var(--text2);flex-shrink:0}
+  .summary-val{font-weight:600;color:var(--text);text-align:right}
+  .badge-ok{background:var(--green-light);color:var(--green-text);padding:2px 8px;border-radius:99px;font-size:11px;font-weight:600}
+  .badge-inc{background:var(--amber-bg);color:var(--amber-text);padding:2px 8px;border-radius:99px;font-size:11px;font-weight:600}
+  .rep-sec{margin-bottom:14px}
+  .rep-sec-header{display:flex;align-items:center;gap:6px;margin-bottom:8px}
+  .rep-sec-title{font-size:13px;font-weight:600;color:var(--text)}
+  .rep-item{display:flex;gap:8px;padding:3px 0;font-size:12px}
+  .rep-item i{font-size:14px;flex-shrink:0;margin-top:1px}
+  .rep-photos{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+  .rep-photos img{width:64px;height:64px;object-fit:cover;border-radius:var(--radius);border:0.5px solid var(--border)}
+  .success-icon{font-size:56px;color:var(--green);display:block;text-align:center;margin-bottom:8px}
+  .info-box{padding:10px 14px;background:var(--blue-bg);color:var(--blue-text);border-radius:var(--radius);font-size:12px;display:flex;align-items:flex-start;gap:8px;margin-top:10px}
+  .info-box i{font-size:16px;flex-shrink:0;margin-top:1px}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- PANTALLA 0: Datos del operador -->
+  <div id="s0" class="screen active">
+    <div class="page-title"><i class="ti ti-building" style="color:var(--green)"></i> Apertura de turno</div>
+    <div class="page-sub">Completá los datos antes de iniciar la revisión</div>
+    <div class="card">
+      <label>Operador / Nombre completo</label>
+      <input type="text" id="op-name" placeholder="Ej. Johnny Jiménez" autocomplete="name">
+      <label>Edificio</label>
+      <select id="op-building">
+        <option value="">— Seleccioná —</option>
+        <option>Edificio 101</option>
+        <option>Edificio 102</option>
+        <option>Edificio 104</option>
+        <option>Edificio 208</option>
+        <option>Edificio 300</option>
+      </select>
+      <label>Turno</label>
+      <select id="op-shift">
+        <option>Apertura (6am–2pm)</option>
+        <option>Intermedio (10am–7pm)</option>
+        <option>Tarde (2pm–10pm)</option>
+        <option>Noche (10pm–6am)</option>
+      </select>
+      <label>Fecha</label>
+      <input type="date" id="op-date">
+    </div>
+    <div class="alert alert-err" id="err0"><i class="ti ti-alert-circle"></i> Completá todos los campos para continuar.</div>
+    <button class="btn btn-primary" onclick="goStep1()">Iniciar revisión <i class="ti ti-arrow-right"></i></button>
+  </div>
+
+  <!-- PANTALLA 1: Revisión por sección -->
+  <div id="s1" class="screen">
+    <div class="step-dots" id="dots"></div>
+    <div class="prog-row"><span id="sec-name-lbl" style="font-weight:500"></span><span id="prog-lbl"></span></div>
+    <div class="prog-bg"><div class="prog-fill" id="prog-fill" style="width:0%"></div></div>
+    <div id="sec-card" class="card"></div>
+    <div class="alert alert-err" id="err1"><i class="ti ti-alert-circle"></i> Marcá todos los ítems críticos antes de continuar.</div>
+    <div class="btn-row">
+      <button class="btn" id="btn-back" onclick="navSec(-1)"><i class="ti ti-arrow-left"></i> Atrás</button>
+      <button class="btn btn-primary" id="btn-next" onclick="navSec(1)">Siguiente <i class="ti ti-arrow-right"></i></button>
+    </div>
+  </div>
+
+  <!-- PANTALLA 2: Firma -->
+  <div id="s2" class="screen">
+    <div class="page-title"><i class="ti ti-signature" style="color:var(--green)"></i> Firma digital</div>
+    <div class="page-sub">Firmá con el dedo para completar el reporte</div>
+    <div class="card">
+      <label>Observación general (opcional)</label>
+      <textarea id="general-obs" placeholder="Ej. Barrera norte con demora, se notificó a mantenimiento..."></textarea>
+      <label style="margin-top:16px">Firma del operador</label>
+      <div class="sig-wrap">
+        <canvas id="sig-canvas" height="140"></canvas>
+      </div>
+      <div class="sig-actions">
+        <button class="btn btn-danger" style="flex:none;padding:8px 14px;width:auto" onclick="clearSig()"><i class="ti ti-trash"></i> Borrar</button>
+        <span class="sig-hint">Usá el dedo o el mouse para firmar</span>
+      </div>
+    </div>
+    <div class="alert alert-err" id="err2"><i class="ti ti-alert-circle"></i> Necesitás firmar antes de generar el reporte.</div>
+    <div class="btn-row">
+      <button class="btn" onclick="showScreen('s1');curSec=sections.length-1;renderSec()"><i class="ti ti-arrow-left"></i> Atrás</button>
+      <button class="btn btn-primary" onclick="genReport()">Generar reporte <i class="ti ti-file-text"></i></button>
+    </div>
+  </div>
+
+  <!-- PANTALLA 3: Reporte final -->
+  <div id="s3" class="screen">
+    <div style="text-align:center;padding:16px 0 20px">
+      <i class="ti ti-circle-check success-icon"></i>
+      <div class="page-title" style="justify-content:center;font-size:20px">Reporte generado</div>
+      <div class="page-sub" style="margin-bottom:0">Apertura registrada correctamente</div>
+    </div>
+    <div class="card" id="report-summary"></div>
+    <div class="card" id="report-items"></div>
+    <div style="margin-top:12px">
+      <canvas id="sig-preview" style="width:100%;border:0.5px solid var(--border);border-radius:var(--radius);display:block"></canvas>
+      <div style="font-size:11px;color:var(--text3);margin-top:4px;text-align:center">Firma del operador</div>
+    </div>
+    <div class="card" id="report-photos" style="margin-top:12px;display:none">
+      <div style="font-size:15px;font-weight:600;margin-bottom:12px">Evidencia fotográfica</div>
+      <div id="photos-by-section"></div>
+      <div class="info-box"><i class="ti ti-info-circle"></i><span>Enviá las fotos por separado al mismo chat o correo junto con el reporte.</span></div>
+    </div>
+    <div class="btn-row" style="margin-top:16px">
+      <button class="btn" onclick="compartir()"><i class="ti ti-share"></i> Compartir</button>
+      <button class="btn btn-primary" onclick="nuevaApertura()">Nueva apertura</button>
+    </div>
+  </div>
+
+</div>
+
+<input type="file" id="file-input" accept="image/*" capture="environment" style="display:none" onchange="handlePhoto(event)">
+
+<script>
+const sections=[
+  {id:'acceso',icon:'ti-barrier-block',title:'Control de acceso',items:[
+    {t:'Barreras vehiculares abren y cierran correctamente',p:'c'},
+    {t:'Prueba de lector de tarjeta en entradas principales',p:'c'},
+    {t:'Cámaras de vigilancia activas en acceso (Revisar con Monitoreo)',p:'i'},
+    {t:'Prueba de apertura remota con monitoreo',p:'c'},
+  ]},
+  {id:'pago',icon:'ti-credit-card',title:'Estación de pago y datáfonos',items:[
+    {t:'Ticketera encendida y dispensando correctamente',p:'c'},
+    {t:'Stock de papel de tiquetes suficiente',p:'i'},
+    {t:'Estacion de pago: pantalla y datáfonos OK',p:'c'},
+    {t:'Prueba de tiquete para asegurar funcionamiento',p:'r'},
+  ]},
+  {id:'infra',icon:'ti-plug',title:'Infraestructura y energía',items:[
+    {t:'Iluminación de todas las áreas del parqueo OK',p:'i'},
+    {t:'Señalización (entrada, salida, niveles) OK',p:'r'},
+    {t:'Barreras en buen Estado',p:'c'},
+    {t:'Las tapas de los equipos estan puestas',p:'i'},
+
+  ]},
+  {id:'ev',icon:'ti-bolt',title:'Cargadores Electricos',items:[
+    {t:'Cargadores encendidos sin errores',p:'i'},
+    {t:'Espacios disponibles habilitados',p:'r'},
+    {t:'Espacios sin funcionamiento Bloqueados',p:'r'},
+    {t:'Cargadores presentan alertas o color rojo',p:'i'},
+    {t:'Limpieza de cargadores',p:'r'},
+  ]},
+  {id:'ops',icon:'ti-checklist',title:'Operaciones generales',items:[
+    {t:'Personal de turno completo y en posición',p:'c'},
+    {t:'Limpieza del área de acceso y bahías OK',p:'r'},
+    {t:'Cierre peatonal listo',p:'r'},
+  ]},
+];
+
+let curSec=0,checks={},obs={},photos={},sigData='',startTime='',activePhotoSec=-1;
+sections.forEach((s,si)=>{s.items.forEach((_,ii)=>{checks[si+'_'+ii]=false;obs[si+'_'+ii]='';});photos[si]=[];});
+
+function showScreen(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById(id).classList.add('active');window.scrollTo(0,0);}
+
+function goStep1(){
+  const name=document.getElementById('op-name').value.trim();
+  const bld=document.getElementById('op-building').value;
+  const date=document.getElementById('op-date').value;
+  if(!name||!bld||!date){document.getElementById('err0').style.display='block';return;}
+  document.getElementById('err0').style.display='none';
+  startTime=new Date().toLocaleTimeString('es-CR',{hour:'2-digit',minute:'2-digit'});
+  curSec=0;renderSec();buildDots();showScreen('s1');
+}
+
+function buildDots(){
+  const d=document.getElementById('dots');d.innerHTML='';
+  sections.forEach((_,i)=>{const dot=document.createElement('div');dot.className='dot'+(i===curSec?' active':'');dot.id='dot'+i;d.appendChild(dot);});
+}
+
+function updateDots(){
+  sections.forEach((_,i)=>{const d=document.getElementById('dot'+i);if(d)d.className='dot'+(i===curSec?' active':i<curSec?' done':'');});
+}
+
+function renderSec(){
+  const sec=sections[curSec];
+  document.getElementById('sec-name-lbl').textContent=sec.title;
+  const done=sec.items.filter((_,ii)=>checks[curSec+'_'+ii]).length;
+  document.getElementById('prog-lbl').textContent=done+'/'+sec.items.length;
+  document.getElementById('prog-fill').style.width=Math.round((done/sec.items.length)*100)+'%';
+  document.getElementById('btn-back').style.visibility=curSec===0?'hidden':'visible';
+  document.getElementById('btn-next').innerHTML=curSec===sections.length-1?'Firmar y finalizar <i class="ti ti-pencil"></i>':'Siguiente <i class="ti ti-arrow-right"></i>';
+  const pc=photos[curSec].length;
+  document.getElementById('sec-card').innerHTML=`
+    <div class="sec-header">
+      <i class="ti ${sec.icon} sec-icon"></i>
+      <span class="sec-title">${sec.title}</span>
+      <span class="sec-prog" id="sp${curSec}">${done}/${sec.items.length}</span>
+    </div>
+    ${sec.items.map((item,ii)=>`
+      <div class="item-row" onclick="toggleItem(${curSec},${ii})">
+        <div class="cb${checks[curSec+'_'+ii]?' on':''}" id="cb${curSec}_${ii}"></div>
+        <div class="item-content">
+          <div class="item-text">${item.t}</div>
+          <span class="obs-toggle" onclick="event.stopPropagation();toggleObs(${curSec},${ii})"><i class="ti ti-pencil" style="font-size:12px"></i> nota</span>
+          <div class="obs-box" id="obsbox${curSec}_${ii}">
+            <textarea placeholder="Anotá cualquier novedad..." onchange="obs['${curSec}_${ii}']=this.value" onclick="event.stopPropagation()">${obs[curSec+'_'+ii]||''}</textarea>
+          </div>
+        </div>
+        <span class="tag tag-${item.p==='c'?'c':item.p==='i'?'i':'r'}">${item.p==='c'?'Crítico':item.p==='i'?'Importante':'Rutina'}</span>
+      </div>
+    `).join('')}
+    <div class="photo-section">
+      <div class="photo-label">
+        <i class="ti ti-camera" style="font-size:16px;color:var(--green)"></i>
+        <span>Evidencia fotográfica</span>
+        ${pc>0?`<span class="photo-count-badge">${pc} foto${pc>1?'s':''}</span>`:''}
+      </div>
+      <div class="photo-grid" id="photo-grid-${curSec}">
+        ${photos[curSec].map((src,pi)=>`<div class="thumb-wrap"><img src="${src}" alt="Foto ${pi+1}"><button class="thumb-del" onclick="removePhoto(${curSec},${pi})">×</button></div>`).join('')}
+      </div>
+      <button class="btn-photo" onclick="triggerPhoto(${curSec})">
+        <i class="ti ti-camera-plus" style="font-size:17px"></i>
+        ${pc===0?'Agregar foto':'Agregar otra foto'}
+      </button>
+    </div>
+  `;
+  updateDots();
+}
+
+function toggleItem(si,ii){
+  const key=si+'_'+ii;checks[key]=!checks[key];
+  document.getElementById('cb'+si+'_'+ii).className='cb'+(checks[key]?' on':'');
+  const done=sections[si].items.filter((_,i)=>checks[si+'_'+i]).length;
+  const sp=document.getElementById('sp'+si);if(sp)sp.textContent=done+'/'+sections[si].items.length;
+  document.getElementById('prog-lbl').textContent=done+'/'+sections[si].items.length;
+  document.getElementById('prog-fill').style.width=Math.round((done/sections[si].items.length)*100)+'%';
+}
+
+function toggleObs(si,ii){const b=document.getElementById('obsbox'+si+'_'+ii);b.style.display=b.style.display==='block'?'none':'block';}
+
+function triggerPhoto(si){activePhotoSec=si;document.getElementById('file-input').value='';document.getElementById('file-input').click();}
+
+function handlePhoto(e){
+  const file=e.target.files[0];if(!file)return;
+  const reader=new FileReader();
+  reader.onload=(ev)=>{photos[activePhotoSec].push(ev.target.result);renderSec();};
+  reader.readAsDataURL(file);
+}
+
+function removePhoto(si,pi){photos[si].splice(pi,1);renderSec();}
+
+function navSec(dir){
+  document.getElementById('err1').style.display='none';
+  if(dir===1){
+    const hasCritPending=sections[curSec].items.some((item,ii)=>item.p==='c'&&!checks[curSec+'_'+ii]);
+    if(hasCritPending){document.getElementById('err1').innerHTML='<i class="ti ti-alert-circle"></i> Marcá todos los ítems críticos antes de continuar.';document.getElementById('err1').style.display='block';return;}
+
+    const hasCritNoNote=sections[curSec].items.some((item,ii)=>item.p==='c'&&checks[curSec+'_'+ii]&&!obs[curSec+'_'+ii].trim());
+    if(hasCritNoNote){document.getElementById('err1').innerHTML='<i class="ti ti-alert-circle"></i> Los ítems críticos requieren una nota de observación.';document.getElementById('err1').style.display='block';return;}
+
+    if(curSec===sections.length-1){showScreen('s2');initSig();return;}
+    curSec++;
+  } else {if(curSec===0)return;curSec--;}
+  renderSec();
+}
+
+let sigCanvas,sigCtx,drawing=false;
+function initSig(){
+  sigCanvas=document.getElementById('sig-canvas');
+  sigCtx=sigCanvas.getContext('2d');
+  sigCanvas.width=sigCanvas.offsetWidth*2;sigCanvas.height=280;
+  sigCtx.scale(2,2);sigCtx.strokeStyle=getComputedStyle(document.documentElement).getPropertyValue('--green').trim()||'#1D9E75';
+  sigCtx.lineWidth=2.5;sigCtx.lineCap='round';sigCtx.lineJoin='round';
+  const getPos=(e)=>{const r=sigCanvas.getBoundingClientRect();const src=e.touches?e.touches[0]:e;return{x:(src.clientX-r.left)*(sigCanvas.width/(r.width*2)),y:(src.clientY-r.top)*(sigCanvas.height/(r.height*2))};};
+  sigCanvas.onmousedown=sigCanvas.ontouchstart=(e)=>{e.preventDefault();drawing=true;const p=getPos(e);sigCtx.beginPath();sigCtx.moveTo(p.x,p.y);};
+  sigCanvas.onmousemove=sigCanvas.ontouchmove=(e)=>{e.preventDefault();if(!drawing)return;const p=getPos(e);sigCtx.lineTo(p.x,p.y);sigCtx.stroke();};
+  sigCanvas.onmouseup=sigCanvas.ontouchend=()=>{drawing=false;sigData=sigCanvas.toDataURL();};
+}
+function clearSig(){if(sigCtx){sigCtx.clearRect(0,0,sigCanvas.width,sigCanvas.height);}sigData='';}
+
+function genReport(){
+  if(!sigData){document.getElementById('err2').style.display='block';return;}
+  document.getElementById('err2').style.display='none';
+  const name=document.getElementById('op-name').value.trim();
+  const bld=document.getElementById('op-building').value;
+  const shift=document.getElementById('op-shift').value;
+  const date=document.getElementById('op-date').value;
+  const endTime=new Date().toLocaleTimeString('es-CR',{hour:'2-digit',minute:'2-digit'});
+  const genObs=document.getElementById('general-obs').value.trim();
+  const totalItems=Object.keys(checks).length;
+  const doneItems=Object.values(checks).filter(Boolean).length;
+  const totalPhotos=Object.values(photos).reduce((a,b)=>a+b.length,0);
+  const dateStr=new Date(date+'T12:00:00').toLocaleDateString('es-CR',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+
+  document.getElementById('report-summary').innerHTML=`
+    <div style="font-size:15px;font-weight:600;margin-bottom:12px">Resumen del turno</div>
+    <div class="summary-row"><span class="summary-lbl">Operador</span><span class="summary-val">${name}</span></div>
+    <div class="summary-row"><span class="summary-lbl">Edificio</span><span class="summary-val">${bld}</span></div>
+    <div class="summary-row"><span class="summary-lbl">Turno</span><span class="summary-val">${shift}</span></div>
+    <div class="summary-row"><span class="summary-lbl">Fecha</span><span class="summary-val">${dateStr}</span></div>
+    <div class="summary-row"><span class="summary-lbl">Hora inicio</span><span class="summary-val">${startTime}</span></div>
+    <div class="summary-row"><span class="summary-lbl">Hora cierre</span><span class="summary-val">${endTime}</span></div>
+    <div class="summary-row"><span class="summary-lbl">Ítems</span><span class="summary-val">${doneItems}/${totalItems} <span class="${doneItems===totalItems?'badge-ok':'badge-inc'}">${doneItems===totalItems?'Completo':'Incompleto'}</span></span></div>
+    <div class="summary-row"><span class="summary-lbl">Fotos</span><span class="summary-val">${totalPhotos} foto${totalPhotos!==1?'s':''}</span></div>
+    ${genObs?`<div class="summary-row" style="flex-direction:column;gap:4px"><span class="summary-lbl">Observación</span><span style="font-size:13px;color:var(--text)">${genObs}</span></div>`:''}
+  `;
+
+  let iHtml='<div style="font-size:15px;font-weight:600;margin-bottom:12px">Detalle por sección</div>';
+  sections.forEach((sec,si)=>{
+    const done=sec.items.filter((_,ii)=>checks[si+'_'+ii]).length;
+    iHtml+=`<div class="rep-sec"><div class="rep-sec-header"><i class="ti ${sec.icon}" style="font-size:15px;color:var(--green)"></i><span class="rep-sec-title">${sec.title}</span><span style="margin-left:auto;font-size:12px;color:var(--text2)">${done}/${sec.items.length}</span></div>`;
+    sec.items.forEach((item,ii)=>{
+      const ok=checks[si+'_'+ii];const note=obs[si+'_'+ii];
+      iHtml+=`<div class="rep-item" style="color:${ok?'var(--text)':'var(--red-text)'}"><i class="ti ${ok?'ti-check':'ti-x'}"></i><span>${item.t}${note?`<br><span style="color:var(--text2)">${note}</span>`:''}</span></div>`;
+    });
+    iHtml+='</div>';
+  });
+  document.getElementById('report-items').innerHTML=iHtml;
+
+  const prev=document.getElementById('sig-preview');
+  const pCtx=prev.getContext('2d');
+  prev.width=prev.offsetWidth*2;prev.height=160;
+  const img=new Image();img.onload=()=>{pCtx.drawImage(img,0,0,prev.width,prev.height);};img.src=sigData;
+
+  const photoCard=document.getElementById('report-photos');
+  const photosBySec=document.getElementById('photos-by-section');
+  if(totalPhotos>0){
+    photoCard.style.display='block';
+    let pHtml='';
+    sections.forEach((sec,si)=>{
+      if(!photos[si].length)return;
+      pHtml+=`<div class="rep-sec"><div class="rep-sec-header"><i class="ti ${sec.icon}" style="font-size:14px;color:var(--green)"></i><span class="rep-sec-title">${sec.title}</span><span class="photo-count-badge" style="margin-left:auto">${photos[si].length} foto${photos[si].length>1?'s':''}</span></div><div class="rep-photos">${photos[si].map((src,pi)=>`<img src="${src}" alt="Foto ${pi+1}">`).join('')}</div></div>`;
+    });
+    photosBySec.innerHTML=pHtml;
+  } else {photoCard.style.display='none';}
+
+  showScreen('s3');
+}
+
+function compartir(){
+  const name=document.getElementById('op-name').value.trim();
+  const bld=document.getElementById('op-building').value;
+  const date=document.getElementById('op-date').value;
+  const doneItems=Object.values(checks).filter(Boolean).length;
+  const totalItems=Object.keys(checks).length;
+  const totalPhotos=Object.values(photos).reduce((a,b)=>a+b.length,0);
+  const pendientes=[];
+  sections.forEach((sec,si)=>{sec.items.forEach((item,ii)=>{if(!checks[si+'_'+ii])pendientes.push('['+sec.title+'] '+item.t);});});
+  const txt=`*APERTURA ${bld.toUpperCase()}*\nFecha: ${date}\nOperador: ${name}\nCompletado: ${doneItems}/${totalItems}\nFotos adjuntas: ${totalPhotos}\n${pendientes.length?'\nPendientes:\n'+pendientes.map(p=>'• '+p).join('\n'):'\n✓ Todo completado'}\n\n_(Las fotos de evidencia se envían por separado)_`;
+  if(navigator.share){navigator.share({title:'Apertura '+bld,text:txt}).catch(()=>navigator.clipboard.writeText(txt));}
+  else{navigator.clipboard.writeText(txt).then(()=>alert('Reporte copiado al portapapeles. Pegalo en WhatsApp o correo.'));}
+}
+
+function nuevaApertura(){
+  checks={};obs={};sigData='';curSec=0;
+  sections.forEach((s,si)=>{s.items.forEach((_,ii)=>{checks[si+'_'+ii]=false;obs[si+'_'+ii]='';});photos[si]=[];});
+  ['op-name','general-obs'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('op-building').value='';
+  document.getElementById('op-date').value=new Date().toISOString().split('T')[0];
+  showScreen('s0');
+}
+
+document.getElementById('op-date').value=new Date().toISOString().split('T')[0];
+</script>
+</body>
+</html>
