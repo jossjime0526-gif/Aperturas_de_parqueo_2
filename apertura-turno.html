@@ -93,8 +93,11 @@
   .rep-sec-title{font-size:13px;font-weight:600;color:var(--text)}
   .rep-item{display:flex;gap:8px;padding:3px 0;font-size:12px}
   .rep-item i{font-size:14px;flex-shrink:0;margin-top:1px}
-  .rep-photos{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
-  .rep-photos img{width:64px;height:64px;object-fit:cover;border-radius:var(--radius);border:0.5px solid var(--border)}
+  .rep-photos{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+  .rep-photos img{width:160px;height:160px;object-fit:cover;border-radius:var(--radius);border:0.5px solid var(--border)}
+  .item-photo-area{margin-top:8px}
+  .item-photo-grid{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:6px}
+  .photo-required{font-size:11px;color:var(--red-text);display:flex;align-items:center;gap:4px;margin-top:4px}
   .success-icon{font-size:56px;color:var(--green);display:block;text-align:center;margin-bottom:8px}
   .info-box{padding:10px 14px;background:var(--blue-bg);color:var(--blue-text);border-radius:var(--radius);font-size:12px;display:flex;align-items:flex-start;gap:8px;margin-top:10px}
   .info-box i{font-size:16px;flex-shrink:0;margin-top:1px}
@@ -232,8 +235,8 @@ const sections=[
   ]},
 ];
 
-let curSec=0,checks={},obs={},photos={},sigData='',startTime='',activePhotoSec=-1;
-sections.forEach((s,si)=>{s.items.forEach((_,ii)=>{checks[si+'_'+ii]=false;obs[si+'_'+ii]='';});photos[si]=[];});
+let curSec=0,checks={},obs={},photos={},sigData='',startTime='',activePhotoKey='';
+sections.forEach((s,si)=>{s.items.forEach((_,ii)=>{checks[si+'_'+ii]=false;obs[si+'_'+ii]='';photos[si+'_'+ii]=[];});});
 
 function showScreen(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById(id).classList.add('active');window.scrollTo(0,0);}
 
@@ -264,40 +267,41 @@ function renderSec(){
   document.getElementById('prog-fill').style.width=Math.round((done/sec.items.length)*100)+'%';
   document.getElementById('btn-back').style.visibility=curSec===0?'hidden':'visible';
   document.getElementById('btn-next').innerHTML=curSec===sections.length-1?'Firmar y finalizar <i class="ti ti-pencil"></i>':'Siguiente <i class="ti ti-arrow-right"></i>';
-  const pc=photos[curSec].length;
+  const pc=0; // unused now, photos per item
   document.getElementById('sec-card').innerHTML=`
     <div class="sec-header">
       <i class="ti ${sec.icon} sec-icon"></i>
       <span class="sec-title">${sec.title}</span>
       <span class="sec-prog" id="sp${curSec}">${done}/${sec.items.length}</span>
     </div>
-    ${sec.items.map((item,ii)=>`
+    ${sec.items.map((item,ii)=>{
+      const key=curSec+'_'+ii;
+      const ipc=(photos[key]||[]).length;
+      const needsPhoto=(item.p==='c'||item.p==='i');
+      return `
       <div class="item-row" onclick="toggleItem(${curSec},${ii})">
-        <div class="cb${checks[curSec+'_'+ii]?' on':''}" id="cb${curSec}_${ii}"></div>
+        <div class="cb${checks[key]?' on':''}" id="cb${curSec}_${ii}"></div>
         <div class="item-content">
           <div class="item-text">${item.t}</div>
-          <span class="obs-toggle" onclick="event.stopPropagation();toggleObs(${curSec},${ii})"><i class="ti ti-pencil" style="font-size:12px"></i> nota</span>
+          <span class="obs-toggle" onclick="event.stopPropagation();toggleObs(${curSec},${ii})"><i class="ti ti-pencil" style="font-size:12px"></i> nota${item.p==='c'?' *':''}</span>
           <div class="obs-box" id="obsbox${curSec}_${ii}">
-            <textarea placeholder="Anotá cualquier novedad..." onchange="obs['${curSec}_${ii}']=this.value" onclick="event.stopPropagation()">${obs[curSec+'_'+ii]||''}</textarea>
+            <textarea placeholder="Anotá cualquier novedad...${item.p==='c'?' (obligatorio)':''}" onchange="obs['${key}']=this.value" onclick="event.stopPropagation()">${obs[key]||''}</textarea>
           </div>
+          ${needsPhoto?`
+          <div class="item-photo-area">
+            <div class="item-photo-grid" id="photo-grid-${key}">
+              ${(photos[key]||[]).map((src,pi)=>`<div class="thumb-wrap"><img src="${src}" alt="Foto ${pi+1}"><button class="thumb-del" onclick="event.stopPropagation();removePhoto('${key}',${pi})">×</button></div>`).join('')}
+            </div>
+            <button class="btn-photo" onclick="event.stopPropagation();triggerPhoto('${key}')">
+              <i class="ti ti-camera-plus" style="font-size:17px"></i>
+              ${ipc===0?'Agregar foto *':'Agregar otra foto'}
+            </button>
+            ${ipc===0?`<div class="photo-required"><i class="ti ti-camera" style="font-size:12px"></i> Foto obligatoria</div>`:''}
+          </div>`:''}
         </div>
         <span class="tag tag-${item.p==='c'?'c':item.p==='i'?'i':'r'}">${item.p==='c'?'Crítico':item.p==='i'?'Importante':'Rutina'}</span>
-      </div>
-    `).join('')}
-    <div class="photo-section">
-      <div class="photo-label">
-        <i class="ti ti-camera" style="font-size:16px;color:var(--green)"></i>
-        <span>Evidencia fotográfica</span>
-        ${pc>0?`<span class="photo-count-badge">${pc} foto${pc>1?'s':''}</span>`:''}
-      </div>
-      <div class="photo-grid" id="photo-grid-${curSec}">
-        ${photos[curSec].map((src,pi)=>`<div class="thumb-wrap"><img src="${src}" alt="Foto ${pi+1}"><button class="thumb-del" onclick="removePhoto(${curSec},${pi})">×</button></div>`).join('')}
-      </div>
-      <button class="btn-photo" onclick="triggerPhoto(${curSec})">
-        <i class="ti ti-camera-plus" style="font-size:17px"></i>
-        ${pc===0?'Agregar foto':'Agregar otra foto'}
-      </button>
-    </div>
+      </div>`;
+    }).join('')}
   `;
   updateDots();
 }
@@ -305,6 +309,7 @@ function renderSec(){
 function toggleItem(si,ii){
   const key=si+'_'+ii;checks[key]=!checks[key];
   document.getElementById('cb'+si+'_'+ii).className='cb'+(checks[key]?' on':'');
+  if(checks[key]&&sections[si].items[ii].p==='c'){const b=document.getElementById('obsbox'+si+'_'+ii);if(b)b.style.display='block';}
   const done=sections[si].items.filter((_,i)=>checks[si+'_'+i]).length;
   const sp=document.getElementById('sp'+si);if(sp)sp.textContent=done+'/'+sections[si].items.length;
   document.getElementById('prog-lbl').textContent=done+'/'+sections[si].items.length;
@@ -313,16 +318,19 @@ function toggleItem(si,ii){
 
 function toggleObs(si,ii){const b=document.getElementById('obsbox'+si+'_'+ii);b.style.display=b.style.display==='block'?'none':'block';}
 
-function triggerPhoto(si){activePhotoSec=si;document.getElementById('file-input').value='';document.getElementById('file-input').click();}
+function triggerPhoto(key){activePhotoKey=key;document.getElementById('file-input').value='';document.getElementById('file-input').click();}
 
 function handlePhoto(e){
   const file=e.target.files[0];if(!file)return;
   const reader=new FileReader();
-  reader.onload=(ev)=>{photos[activePhotoSec].push(ev.target.result);renderSec();};
+  reader.onload=(ev)=>{
+    if(!photos[activePhotoKey])photos[activePhotoKey]=[];
+    photos[activePhotoKey].push(ev.target.result);renderSec();
+  };
   reader.readAsDataURL(file);
 }
 
-function removePhoto(si,pi){photos[si].splice(pi,1);renderSec();}
+function removePhoto(key,pi){photos[key].splice(pi,1);renderSec();}
 
 function navSec(dir){
   document.getElementById('err1').style.display='none';
@@ -332,6 +340,9 @@ function navSec(dir){
 
     const hasCritNoNote=sections[curSec].items.some((item,ii)=>item.p==='c'&&checks[curSec+'_'+ii]&&!obs[curSec+'_'+ii].trim());
     if(hasCritNoNote){document.getElementById('err1').innerHTML='<i class="ti ti-alert-circle"></i> Los ítems críticos requieren una nota de observación.';document.getElementById('err1').style.display='block';return;}
+
+    const hasMissingPhoto=sections[curSec].items.some((item,ii)=>(item.p==='c'||item.p==='i')&&!(photos[curSec+'_'+ii]&&photos[curSec+'_'+ii].length>0));
+    if(hasMissingPhoto){document.getElementById('err1').innerHTML='<i class="ti ti-alert-circle"></i> Los ítems críticos e importantes requieren al menos una foto de evidencia.';document.getElementById('err1').style.display='block';return;}
 
     if(curSec===sections.length-1){showScreen('s2');initSig();return;}
     curSec++;
@@ -364,7 +375,7 @@ function genReport(){
   const genObs=document.getElementById('general-obs').value.trim();
   const totalItems=Object.keys(checks).length;
   const doneItems=Object.values(checks).filter(Boolean).length;
-  const totalPhotos=Object.values(photos).reduce((a,b)=>a+b.length,0);
+  const totalPhotos=Object.values(photos).reduce((a,b)=>a+(Array.isArray(b)?b.length:0),0);
   const dateStr=new Date(date+'T12:00:00').toLocaleDateString('es-CR',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
 
   document.getElementById('report-summary').innerHTML=`
@@ -385,8 +396,16 @@ function genReport(){
     const done=sec.items.filter((_,ii)=>checks[si+'_'+ii]).length;
     iHtml+=`<div class="rep-sec"><div class="rep-sec-header"><i class="ti ${sec.icon}" style="font-size:15px;color:var(--green)"></i><span class="rep-sec-title">${sec.title}</span><span style="margin-left:auto;font-size:12px;color:var(--text2)">${done}/${sec.items.length}</span></div>`;
     sec.items.forEach((item,ii)=>{
-      const ok=checks[si+'_'+ii];const note=obs[si+'_'+ii];
-      iHtml+=`<div class="rep-item" style="color:${ok?'var(--text)':'var(--red-text)'}"><i class="ti ${ok?'ti-check':'ti-x'}"></i><span>${item.t}${note?`<br><span style="color:var(--text2)">${note}</span>`:''}</span></div>`;
+      const key=si+'_'+ii;
+      const ok=checks[key];const note=obs[key];
+      const itemPhotos=photos[key]||[];
+      iHtml+=`<div style="margin-bottom:10px;padding-bottom:10px;border-bottom:0.5px solid var(--border-light)">
+        <div style="display:flex;gap:8px;font-size:12px;color:${ok?'var(--text)':'var(--red-text)'}">
+          <i class="ti ${ok?'ti-check':'ti-x'}" style="font-size:14px;flex-shrink:0;margin-top:1px"></i>
+          <span>${item.t}${note?`<br><span style="color:var(--text2);font-size:11px">📝 ${note}</span>`:''}</span>
+        </div>
+        ${itemPhotos.length>0?`<div class="rep-photos">${itemPhotos.map((src,pi)=>`<img src="${src}" alt="Foto ${pi+1}">`).join('')}</div>`:''}
+      </div>`;
     });
     iHtml+='</div>';
   });
@@ -395,19 +414,15 @@ function genReport(){
   const prev=document.getElementById('sig-preview');
   const pCtx=prev.getContext('2d');
   prev.width=prev.offsetWidth*2;prev.height=160;
-  const img=new Image();img.onload=()=>{pCtx.drawImage(img,0,0,prev.width,prev.height);};img.src=sigData;
+ 	 const img=new Image();
+	img.onload=()=>{
+  	prev.width=prev.offsetWidth*2;
+ 	 prev.height=160;
+  	pCtx.drawImage(img,0,0,prev.width,prev.height);
+	};
+	img.src=sigData;
 
-  const photoCard=document.getElementById('report-photos');
-  const photosBySec=document.getElementById('photos-by-section');
-  if(totalPhotos>0){
-    photoCard.style.display='block';
-    let pHtml='';
-    sections.forEach((sec,si)=>{
-      if(!photos[si].length)return;
-      pHtml+=`<div class="rep-sec"><div class="rep-sec-header"><i class="ti ${sec.icon}" style="font-size:14px;color:var(--green)"></i><span class="rep-sec-title">${sec.title}</span><span class="photo-count-badge" style="margin-left:auto">${photos[si].length} foto${photos[si].length>1?'s':''}</span></div><div class="rep-photos">${photos[si].map((src,pi)=>`<img src="${src}" alt="Foto ${pi+1}">`).join('')}</div></div>`;
-    });
-    photosBySec.innerHTML=pHtml;
-  } else {photoCard.style.display='none';}
+  document.getElementById('report-photos').style.display='none';
 
   showScreen('s3');
 }
@@ -418,7 +433,7 @@ function compartir(){
   const date=document.getElementById('op-date').value;
   const doneItems=Object.values(checks).filter(Boolean).length;
   const totalItems=Object.keys(checks).length;
-  const totalPhotos=Object.values(photos).reduce((a,b)=>a+b.length,0);
+  const totalPhotos=Object.values(photos).reduce((a,b)=>a+(Array.isArray(b)?b.length:0),0);
   const pendientes=[];
   sections.forEach((sec,si)=>{sec.items.forEach((item,ii)=>{if(!checks[si+'_'+ii])pendientes.push('['+sec.title+'] '+item.t);});});
   const txt=`*APERTURA ${bld.toUpperCase()}*\nFecha: ${date}\nOperador: ${name}\nCompletado: ${doneItems}/${totalItems}\nFotos adjuntas: ${totalPhotos}\n${pendientes.length?'\nPendientes:\n'+pendientes.map(p=>'• '+p).join('\n'):'\n✓ Todo completado'}\n\n_(Las fotos de evidencia se envían por separado)_`;
@@ -427,8 +442,8 @@ function compartir(){
 }
 
 function nuevaApertura(){
-  checks={};obs={};sigData='';curSec=0;
-  sections.forEach((s,si)=>{s.items.forEach((_,ii)=>{checks[si+'_'+ii]=false;obs[si+'_'+ii]='';});photos[si]=[];});
+  checks={};obs={};photos={};sigData='';curSec=0;
+  sections.forEach((s,si)=>{s.items.forEach((_,ii)=>{checks[si+'_'+ii]=false;obs[si+'_'+ii]='';photos[si+'_'+ii]=[];});});
   ['op-name','general-obs'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('op-building').value='';
   document.getElementById('op-date').value=new Date().toISOString().split('T')[0];
